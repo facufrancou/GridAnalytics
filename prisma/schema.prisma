@@ -1,0 +1,287 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CatBocasCompra {
+  id               Int                @id @default(autoincrement()) @map("id_boca")
+  nombre           String             @db.VarChar(100)
+  proveedor        String             @db.VarChar(100)
+  activo           Boolean            @default(true)
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  medicionesCompra MedicionesCompra[]
+  balances         VwBalanceBocaMes[]
+
+  @@map("cat_bocas_compra")
+}
+
+model CatSegmentos {
+  id        Int        @id @default(autoincrement()) @map("id_segmento")
+  nombre    String     @unique @db.VarChar(50)
+  codigo    String     @unique @db.VarChar(10)
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  usuarios  Usuarios[]
+
+  @@map("cat_segmentos")
+}
+
+model CatLineas {
+  id                 Int                  @id @default(autoincrement()) @map("id_linea")
+  nombre             String               @db.VarChar(100)
+  tension            String               @db.VarChar(20)
+  zona               String?              @db.VarChar(50)
+  activo             Boolean              @default(true)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  relevamientoPostes RelevamientoPostes[]
+  usuarios           Usuarios[]
+
+  @@map("cat_lineas")
+}
+
+model CatTiposPoste {
+  id                 Int                  @id @default(autoincrement()) @map("id_poste_tipo")
+  nombre             String               @unique @db.VarChar(50)
+  activo             Boolean              @default(true)
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
+  relevamientoPostes RelevamientoPostes[]
+
+  @@map("cat_tipos_poste")
+}
+
+model Usuarios {
+  id              Int               @id @default(autoincrement()) @map("id_usuario")
+  nroSuministro   String            @unique @map("nro_suministro") @db.VarChar(20)
+  nombre          String            @db.VarChar(200)
+  direccion       String?           @db.VarChar(300)
+  idSegmento      Int               @map("id_segmento")
+  idLinea         Int?              @map("id_linea")
+  activo          Boolean           @default(true)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  medicionesVenta MedicionesVenta[]
+  linea           CatLineas?        @relation(fields: [idLinea], references: [id])
+  segmento        CatSegmentos      @relation(fields: [idSegmento], references: [id])
+
+  @@index([nroSuministro])
+  @@index([idSegmento])
+  @@index([idLinea])
+  @@map("usuarios")
+}
+
+model MedicionesCompra {
+  id            Int            @id @default(autoincrement())
+  idBoca        Int            @map("id_boca")
+  periodoMes    String         @map("periodo_mes") @db.VarChar(7)
+  kwhComprados  Decimal        @map("kwh_comprados") @db.Decimal(12, 2)
+  importe       Decimal        @db.Decimal(12, 2)
+  fpPromedio    Decimal?       @map("fp_promedio") @db.Decimal(4, 3)
+  demandaMaxKw  Decimal?       @map("demanda_max_kw") @db.Decimal(10, 2)
+  fechaFactura  DateTime?      @map("fecha_factura")
+  observaciones String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  boca          CatBocasCompra @relation(fields: [idBoca], references: [id])
+
+  @@unique([idBoca, periodoMes])
+  @@index([periodoMes])
+  @@map("mediciones_compra")
+}
+
+model MedicionesVenta {
+  id              Int       @id @default(autoincrement())
+  idUsuario       Int       @map("id_usuario")
+  periodoBimestre String    @map("periodo_bimestre") @db.VarChar(15)
+  kwhVendidosBim  Decimal   @map("kwh_vendidos_bim") @db.Decimal(12, 2)
+  importe         Decimal   @db.Decimal(12, 2)
+  lectIni         Decimal   @map("lect_ini") @db.Decimal(12, 2)
+  lectFin         Decimal   @map("lect_fin") @db.Decimal(12, 2)
+  fechaFactura    DateTime? @map("fecha_factura")
+  observaciones   String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  usuario         Usuarios  @relation(fields: [idUsuario], references: [id])
+
+  @@unique([idUsuario, periodoBimestre])
+  @@index([periodoBimestre])
+  @@map("mediciones_venta")
+}
+
+model MapPeriodos {
+  id               Int      @id @default(autoincrement())
+  fechaInicio      DateTime @map("fecha_inicio")
+  fechaFin         DateTime @map("fecha_fin")
+  tipo             String   @db.VarChar(20)
+  claveNormalizada String   @unique @map("clave_normalizada") @db.VarChar(20)
+  diasPeriodo      Int      @map("dias_periodo")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([fechaInicio, fechaFin])
+  @@index([tipo])
+  @@map("map_periodos")
+}
+
+model RelevamientoPostes {
+  id                Int           @id @default(autoincrement())
+  idLinea           Int           @map("id_linea")
+  idPosteType       Int           @map("id_poste_tipo")
+  lat               Decimal?      @db.Decimal(10, 8)
+  lng               Decimal?      @db.Decimal(11, 8)
+  estado            String        @db.VarChar(50)
+  observaciones     String?
+  fechaRelevamiento DateTime      @map("fecha_relevamiento")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+  linea             CatLineas     @relation(fields: [idLinea], references: [id])
+  tipoPoste         CatTiposPoste @relation(fields: [idPosteType], references: [id])
+
+  @@index([idLinea])
+  @@index([fechaRelevamiento])
+  @@map("relevamiento_postes")
+}
+
+model EtlFacturasRaw {
+  id        Int                @id @default(autoincrement())
+  fuente    String             @db.VarChar(50)
+  archivo   String             @db.VarChar(500)
+  campo     String             @db.VarChar(100)
+  valor     String
+  conf      Json?
+  hashDoc   String             @map("hash_doc") @db.VarChar(64)
+  createdAt DateTime           @default(now()) @map("created_at")
+  matches   EtlMatchFacturas[]
+
+  @@index([hashDoc])
+  @@index([fuente])
+  @@map("etl_facturas_raw")
+}
+
+model EtlMatchFacturas {
+  id               Int            @id @default(autoincrement())
+  idRaw            Int            @map("id_raw")
+  campoNormalizado String         @map("campo_normalizado") @db.VarChar(100)
+  valorNormalizado String         @map("valor_normalizado")
+  entidadDestino   String         @map("entidad_destino") @db.VarChar(50)
+  procesado        Boolean        @default(false)
+  createdAt        DateTime       @default(now()) @map("created_at")
+  raw              EtlFacturasRaw @relation(fields: [idRaw], references: [id])
+
+  @@index([entidadDestino])
+  @@index([procesado])
+  @@map("etl_match_facturas")
+}
+
+model UsersAuth {
+  id            Int             @id @default(autoincrement())
+  email         String          @unique @db.VarChar(150)
+  passwordHash  String          @map("password_hash")
+  role          String          @db.VarChar(20)
+  name          String?         @db.VarChar(200)
+  activo        Boolean         @default(true)
+  lastLogin     DateTime?       @map("last_login")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  refreshTokens RefreshTokens[]
+
+  @@index([email])
+  @@map("users_auth")
+}
+
+model RefreshTokens {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  revoked   Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      UsersAuth @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model ApiKeys {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(100)
+  keyHash   String    @map("key_hash") @db.VarChar(255)
+  scopes    String[]
+  activo    Boolean   @default(true)
+  lastUsed  DateTime? @map("last_used")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([keyHash])
+  @@map("api_keys")
+}
+
+model VwVentaMensualizada {
+  id             Int      @id @default(autoincrement())
+  idUsuario      Int      @map("id_usuario")
+  nroSuministro  String   @map("nro_suministro") @db.VarChar(20)
+  periodoMes     String   @map("periodo_mes") @db.VarChar(7)
+  kwhVendidosMes Decimal  @map("kwh_vendidos_mes") @db.Decimal(12, 2)
+  importeMes     Decimal  @map("importe_mes") @db.Decimal(12, 2)
+  idSegmento     Int      @map("id_segmento")
+  idLinea        Int?     @map("id_linea")
+  fechaCalculo   DateTime @default(now()) @map("fecha_calculo")
+
+  @@unique([idUsuario, periodoMes])
+  @@index([periodoMes])
+  @@index([idSegmento])
+  @@map("vw_venta_mensualizada")
+}
+
+model VwBalanceBocaMes {
+  id           Int            @id @default(autoincrement())
+  idBoca       Int            @map("id_boca")
+  periodoMes   String         @map("periodo_mes") @db.VarChar(7)
+  compraKwh    Decimal        @map("compra_kwh") @db.Decimal(12, 2)
+  ventaKwh     Decimal        @map("venta_kwh") @db.Decimal(12, 2)
+  perdidaKwh   Decimal        @map("perdida_kwh") @db.Decimal(12, 2)
+  perdidaPct   Decimal        @map("perdida_pct") @db.Decimal(5, 2)
+  fechaCalculo DateTime       @default(now()) @map("fecha_calculo")
+  boca         CatBocasCompra @relation(fields: [idBoca], references: [id])
+
+  @@unique([idBoca, periodoMes])
+  @@index([periodoMes])
+  @@map("vw_balance_boca_mes")
+}
+
+model VwVentaPorSegmentoMes {
+  id               Int      @id @default(autoincrement())
+  idSegmento       Int      @map("id_segmento")
+  periodoMes       String   @map("periodo_mes") @db.VarChar(7)
+  totalKwh         Decimal  @map("total_kwh") @db.Decimal(12, 2)
+  totalImporte     Decimal  @map("total_importe") @db.Decimal(12, 2)
+  cantUsuarios     Int      @map("cant_usuarios")
+  pctParticipacion Decimal  @map("pct_participacion") @db.Decimal(5, 2)
+  fechaCalculo     DateTime @default(now()) @map("fecha_calculo")
+
+  @@unique([idSegmento, periodoMes])
+  @@index([periodoMes])
+  @@map("vw_venta_por_segmento_mes")
+}
+
+model VwVentaPorLineaMes {
+  id           Int      @id @default(autoincrement())
+  idLinea      Int      @map("id_linea")
+  periodoMes   String   @map("periodo_mes") @db.VarChar(7)
+  totalKwh     Decimal  @map("total_kwh") @db.Decimal(12, 2)
+  totalImporte Decimal  @map("total_importe") @db.Decimal(12, 2)
+  cantUsuarios Int      @map("cant_usuarios")
+  fechaCalculo DateTime @default(now()) @map("fecha_calculo")
+
+  @@unique([idLinea, periodoMes])
+  @@index([periodoMes])
+  @@map("vw_venta_por_linea_mes")
+}
