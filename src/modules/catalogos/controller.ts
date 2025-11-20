@@ -16,16 +16,19 @@ import {
 } from './schemas.js';
 import { ValidationError } from '../../middlewares/error.js';
 
-const catalogosService = new CatalogosService();
-
 export class CatalogosController {
+  private catalogosService: CatalogosService;
+
+  constructor() {
+    this.catalogosService = new CatalogosService();
+  }
 
   // ============ BOCAS DE COMPRA ============
   
   async getBocasCompra(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = catalogoQuerySchema.parse(request.query);
-      const result = await catalogosService.getBocasCompra(query);
+      const result = await this.catalogosService.getBocasCompra(query);
       
       await reply.status(200).send({
         success: true,
@@ -52,7 +55,7 @@ export class CatalogosController {
       return;
     }
 
-    const result = await catalogosService.getBocaCompraById(bocaId);
+    const result = await this.catalogosService.getBocaCompraById(bocaId);
     
     await reply.status(200).send({
       success: true,
@@ -63,7 +66,7 @@ export class CatalogosController {
   async createBocaCompra(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = bocaCompraSchema.parse(request.body);
-      const result = await catalogosService.createBocaCompra(data);
+      const result = await this.catalogosService.createBocaCompra(data);
       
       await reply.status(201).send({
         success: true,
@@ -92,7 +95,7 @@ export class CatalogosController {
 
     try {
       const data = updateBocaCompraSchema.parse(request.body);
-      const result = await catalogosService.updateBocaCompra(bocaId, data);
+      const result = await this.catalogosService.updateBocaCompra(bocaId, data);
       
       await reply.status(200).send({
         success: true,
@@ -119,7 +122,7 @@ export class CatalogosController {
       return;
     }
 
-    await catalogosService.deleteBocaCompra(bocaId);
+    await this.catalogosService.deleteBocaCompra(bocaId);
     
     await reply.status(200).send({
       success: true,
@@ -132,7 +135,7 @@ export class CatalogosController {
   async getSegmentos(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = catalogoQuerySchema.parse(request.query);
-      const result = await catalogosService.getSegmentos(query);
+      const result = await this.catalogosService.getSegmentos(query);
       
       await reply.status(200).send({
         success: true,
@@ -159,7 +162,7 @@ export class CatalogosController {
       return;
     }
 
-    const result = await catalogosService.getSegmentoById(segmentoId);
+    const result = await this.catalogosService.getSegmentoById(segmentoId);
     
     await reply.status(200).send({
       success: true,
@@ -170,7 +173,7 @@ export class CatalogosController {
   async createSegmento(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = segmentoSchema.parse(request.body);
-      const result = await catalogosService.createSegmento(data);
+      const result = await this.catalogosService.createSegmento(data);
       
       await reply.status(201).send({
         success: true,
@@ -199,7 +202,7 @@ export class CatalogosController {
 
     try {
       const data = updateSegmentoSchema.parse(request.body);
-      const result = await catalogosService.updateSegmento(segmentoId, data);
+      const result = await this.catalogosService.updateSegmento(segmentoId, data);
       
       await reply.status(200).send({
         success: true,
@@ -226,7 +229,7 @@ export class CatalogosController {
       return;
     }
 
-    await catalogosService.deleteSegmento(segmentoId);
+    await this.catalogosService.deleteSegmento(segmentoId);
     
     await reply.status(200).send({
       success: true,
@@ -239,7 +242,7 @@ export class CatalogosController {
   async getLineas(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = catalogoQuerySchema.parse(request.query);
-      const result = await catalogosService.getLineas(query);
+      const result = await this.catalogosService.getLineas(query);
       
       await reply.status(200).send({
         success: true,
@@ -266,7 +269,7 @@ export class CatalogosController {
       return;
     }
 
-    const result = await catalogosService.getLineaById(lineaId);
+    const result = await this.catalogosService.getLineaById(lineaId);
     
     await reply.status(200).send({
       success: true,
@@ -277,7 +280,7 @@ export class CatalogosController {
   async createLinea(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = lineaSchema.parse(request.body);
-      const result = await catalogosService.createLinea(data);
+      const result = await this.catalogosService.createLinea(data);
       
       await reply.status(201).send({
         success: true,
@@ -306,7 +309,7 @@ export class CatalogosController {
 
     try {
       const data = updateLineaSchema.parse(request.body);
-      const result = await catalogosService.updateLinea(lineaId, data);
+      const result = await this.catalogosService.updateLinea(lineaId, data);
       
       await reply.status(200).send({
         success: true,
@@ -333,7 +336,7 @@ export class CatalogosController {
       return;
     }
 
-    await catalogosService.deleteLinea(lineaId);
+    await this.catalogosService.deleteLinea(lineaId);
     
     await reply.status(200).send({
       success: true,
@@ -346,7 +349,7 @@ export class CatalogosController {
   async getTiposPoste(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = catalogoQuerySchema.parse(request.query);
-      const result = await catalogosService.getTiposPoste(query);
+      const result = await this.catalogosService.getTiposPoste(query);
       
       await reply.status(200).send({
         success: true,
@@ -373,7 +376,7 @@ export class CatalogosController {
       return;
     }
 
-    const result = await catalogosService.getTipoPosteById(tipoId);
+    const result = await this.catalogosService.getTipoPosteById(tipoId);
     
     await reply.status(200).send({
       success: true,
@@ -384,7 +387,7 @@ export class CatalogosController {
   async createTipoPoste(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = tipoPosteSchema.parse(request.body);
-      const result = await catalogosService.createTipoPoste(data);
+      const result = await this.catalogosService.createTipoPoste(data);
       
       await reply.status(201).send({
         success: true,
@@ -413,7 +416,7 @@ export class CatalogosController {
 
     try {
       const data = updateTipoPosteSchema.parse(request.body);
-      const result = await catalogosService.updateTipoPoste(tipoId, data);
+      const result = await this.catalogosService.updateTipoPoste(tipoId, data);
       
       await reply.status(200).send({
         success: true,
@@ -440,7 +443,7 @@ export class CatalogosController {
       return;
     }
 
-    await catalogosService.deleteTipoPoste(tipoId);
+    await this.catalogosService.deleteTipoPoste(tipoId);
     
     await reply.status(200).send({
       success: true,
@@ -453,7 +456,7 @@ export class CatalogosController {
   async getUsuarios(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = usuarioQuerySchema.parse(request.query);
-      const result = await catalogosService.getUsuarios(query);
+      const result = await this.catalogosService.getUsuarios(query);
       
       await reply.status(200).send({
         success: true,
@@ -480,7 +483,7 @@ export class CatalogosController {
       return;
     }
 
-    const result = await catalogosService.getUsuarioById(usuarioId);
+    const result = await this.catalogosService.getUsuarioById(usuarioId);
     
     await reply.status(200).send({
       success: true,
@@ -491,7 +494,7 @@ export class CatalogosController {
   async getUsuarioByNroSuministro(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { nroSuministro } = request.params as { nroSuministro: string };
     
-    const result = await catalogosService.getUsuarioByNroSuministro(nroSuministro);
+    const result = await this.catalogosService.getUsuarioByNroSuministro(nroSuministro);
     
     await reply.status(200).send({
       success: true,
@@ -502,7 +505,7 @@ export class CatalogosController {
   async createUsuario(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = usuarioSchema.parse(request.body);
-      const result = await catalogosService.createUsuario(data);
+      const result = await this.catalogosService.createUsuario(data);
       
       await reply.status(201).send({
         success: true,
@@ -531,7 +534,7 @@ export class CatalogosController {
 
     try {
       const data = updateUsuarioSchema.parse(request.body);
-      const result = await catalogosService.updateUsuario(usuarioId, data);
+      const result = await this.catalogosService.updateUsuario(usuarioId, data);
       
       await reply.status(200).send({
         success: true,
@@ -558,7 +561,7 @@ export class CatalogosController {
       return;
     }
 
-    await catalogosService.deleteUsuario(usuarioId);
+    await this.catalogosService.deleteUsuario(usuarioId);
     
     await reply.status(200).send({
       success: true,

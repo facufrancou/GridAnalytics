@@ -11,14 +11,9 @@ export async function requestIdMiddleware(
   const requestId = nanoid(10);
   request.requestId = requestId;
   
-  // Agregar header de respuesta con el requestId
-  reply.header('X-Request-Id', requestId);
-  
-  // Crear logger específico para este request
-  request.log = createRequestLogger(requestId);
-  
   // Log del request entrante (sin datos sensibles)
   request.log.info({
+    requestId,
     method: request.method,
     url: request.url,
     userAgent: request.headers['user-agent'],

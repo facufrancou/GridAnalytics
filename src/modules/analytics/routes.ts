@@ -8,7 +8,6 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Mensualizar venta bimestral',
       description: 'Convierte una venta bimestral a dos registros mensuales ponderados por días',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         required: ['periodoBimestre', 'kwhVendidosBim'],
@@ -16,19 +15,16 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           periodoBimestre: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}_\\d{4}-\\d{2}$',
-            example: '2024-01_2024-02',
             description: 'Período bimestral en formato YYYY-MM_YYYY-MM',
           },
           kwhVendidosBim: {
             type: 'number',
             minimum: 0,
-            example: 10000,
             description: 'kWh vendidos en el bimestre',
           },
           importeBim: {
             type: 'number',
             minimum: 0,
-            example: 5000,
             description: 'Importe total del bimestre (opcional)',
           },
         },
@@ -64,7 +60,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Balance general compra vs venta',
       description: 'Obtiene el balance completo entre compras y ventas con cálculo automático de pérdidas',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       querystring: {
         type: 'object',
         required: ['periodoInicio', 'periodoFin'],
@@ -72,18 +68,15 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           idBoca: {
             type: 'string',
             description: 'Filtrar por boca específica (opcional)',
-            example: 'BOCA001',
           },
           periodoInicio: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}$',
-            example: '2024-01',
             description: 'Período inicial en formato YYYY-MM',
           },
           periodoFin: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}$',
-            example: '2024-03',
             description: 'Período final en formato YYYY-MM',
           },
           incluirDetalle: {
@@ -141,7 +134,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Balance de compras por boca',
       description: 'Obtiene las compras agregadas por boca y período',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       querystring: {
         type: 'object',
         required: ['periodoInicio', 'periodoFin'],
@@ -195,7 +188,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Balance de ventas por boca',
       description: 'Obtiene las ventas agregadas por boca y período, con mensualización automática de facturación bimestral',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       querystring: {
         type: 'object',
         required: ['periodoInicio', 'periodoFin'],
@@ -249,7 +242,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Análisis detallado de pérdidas',
       description: 'Análisis completo de pérdidas con datos adicionales de usuarios y demanda',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       querystring: {
         type: 'object',
         required: ['periodoInicio', 'periodoFin'],
@@ -316,7 +309,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Resumen consolidado por período',
       description: 'Resumen ejecutivo con totales y distribución de pérdidas por período',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       params: {
         type: 'object',
         required: ['periodo'],
@@ -324,7 +317,6 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           periodo: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}$',
-            example: '2024-01',
             description: 'Período en formato YYYY-MM',
           },
         },
@@ -364,7 +356,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Top de pérdidas por período',
       description: 'Ranking de bocas con mayores pérdidas porcentuales en un período',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       params: {
         type: 'object',
         required: ['periodo'],
@@ -372,7 +364,6 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           periodo: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}$',
-            example: '2024-01',
           },
         },
       },
@@ -382,7 +373,6 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           limite: {
             type: 'string',
             pattern: '^\\d+$',
-            example: '10',
             description: 'Número máximo de resultados (1-100)',
           },
         },
@@ -430,7 +420,7 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       summary: 'Generar alertas automáticas',
       description: 'Genera alertas automáticas basadas en umbrales de pérdidas y anomalías',
       tags: ['Analytics'],
-      security: [{ bearerAuth: [] }],
+      
       params: {
         type: 'object',
         required: ['periodo'],
@@ -438,7 +428,6 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
           periodo: {
             type: 'string',
             pattern: '^\\d{4}-\\d{2}$',
-            example: '2024-01',
           },
         },
       },
@@ -512,6 +501,123 @@ export async function analyticsRoutes(fastify: FastifyInstance, controller: Anal
       },
     },
     handler: controller.generarAlertas.bind(controller),
+  });
+
+  // Jerarquía de distribución: Boca → Distribuidores → Clientes
+  await fastify.get('/jerarquia/boca/:idBoca', {
+    schema: {
+      summary: 'Jerarquía de distribución por boca',
+      description: 'Obtiene la jerarquía completa: boca → distribuidores → clientes',
+      tags: ['Analytics'],
+      
+      params: {
+        type: 'object',
+        required: ['idBoca'],
+        properties: {
+          idBoca: {
+            type: 'string',
+            description: 'ID de la boca de compra',
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'object',
+              properties: {
+                id: { type: 'number' },
+                nombre: { type: 'string' },
+                proveedor: { type: 'string' },
+                activo: { type: 'boolean' },
+                latitud: { type: 'string', nullable: true },
+                longitud: { type: 'string', nullable: true },
+                totalDistribuidores: { type: 'number' },
+                totalClientes: { type: 'number' },
+                distribuidores: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'number' },
+                      nombre: { type: 'string', nullable: true },
+                      ubicacion: { type: 'string', nullable: true },
+                      latitud: { type: 'string', nullable: true },
+                      longitud: { type: 'string', nullable: true },
+                      totalClientes: { type: 'number' },
+                      clientes: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'number' },
+                            nroSuministro: { type: 'string' },
+                            nombre: { type: 'string' },
+                            direccion: { type: 'string', nullable: true },
+                            idSegmento: { type: 'number' },
+                            segmentoNombre: { type: 'string' },
+                            idLinea: { type: 'number', nullable: true },
+                            lineaNombre: { type: 'string', nullable: true },
+                            activo: { type: 'boolean' },
+                            latitud: { type: 'string', nullable: true },
+                            longitud: { type: 'string', nullable: true },
+                            cod_postal: { type: 'number', nullable: true },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: controller.getBocaHierarchy.bind(controller),
+  });
+
+  // Resumen de todas las bocas con estadísticas de jerarquía
+  await fastify.get('/jerarquia/bocas', {
+    schema: {
+      summary: 'Resumen de jerarquía de todas las bocas',
+      description: 'Lista todas las bocas con conteo de distribuidores y clientes',
+      tags: ['Analytics'],
+      
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'number' },
+                  nombre: { type: 'string' },
+                  proveedor: { type: 'string' },
+                  activo: { type: 'boolean' },
+                  totalDistribuidores: { type: 'number' },
+                  totalClientes: { type: 'number' },
+                },
+              },
+            },
+            meta: {
+              type: 'object',
+              properties: {
+                total: { type: 'number' },
+                totalDistribuidores: { type: 'number' },
+                totalClientes: { type: 'number' },
+              },
+            },
+          },
+        },
+      },
+    },
+    handler: controller.getAllBocasHierarchySummary.bind(controller),
   });
 }
 

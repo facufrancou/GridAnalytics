@@ -6,43 +6,43 @@ import { AuthService, createAuthController, registerAuthModule } from './modules
 import { CatalogosService, createCatalogosController, registerCatalogosModule } from './modules/catalogos/index.js';
 import { ETLService, createETLController, registerETLModule } from './modules/etl/index.js';
 import { AnalyticsService, createAnalyticsController, registerAnalyticsModule } from './modules/analytics/index.js';
-
-// Middlewares
-import { authMiddleware } from './middlewares/auth.js';
-import { errorHandler } from './middlewares/error.js';
-import { rateLimitMiddleware } from './middlewares/rateLimit.js';
-import { requestIdMiddleware } from './middlewares/requestId.js';
+import { MedicionesService, createMedicionesController, registerMedicionesModule } from './modules/mediciones/index.js';
+import { VistasService, createVistasController, registerVistasModule } from './modules/vistas/index.js';
+import { InfraService, createInfraController, registerInfraModule } from './modules/infra/index.js';
+import { AdminService, createAdminController, registerAdminModule } from './modules/admin/index.js';
 
 export async function registerRoutes(fastify: FastifyInstance) {
-  // Middlewares globales
-  await fastify.register(requestIdMiddleware);
-  await fastify.register(rateLimitMiddleware);
-  await fastify.register(errorHandler);
-
   // Servicios
-  const authService = new AuthService(prisma);
-  const catalogosService = new CatalogosService(prisma);
-  const etlService = new ETLService(prisma);
+  const authService = new AuthService();
+  const catalogosService = new CatalogosService();
+  const etlService = new ETLService();
   const analyticsService = new AnalyticsService(prisma);
+  const medicionesService = new MedicionesService();
+  const vistasService = new VistasService();
+  const infraService = new InfraService();
+  const adminService = new AdminService();
 
   // Controladores
   const authController = createAuthController(authService);
   const catalogosController = createCatalogosController(catalogosService);
   const etlController = createETLController(etlService);
   const analyticsController = createAnalyticsController(analyticsService);
+  const medicionesController = createMedicionesController(medicionesService);
+  const vistasController = createVistasController(vistasService);
+  const infraController = createInfraController(infraService);
+  const adminController = createAdminController(adminService);
 
   // Rutas públicas (sin autenticación)
   await registerAuthModule(fastify, authController);
 
-  // Middleware de autenticación para rutas protegidas
-  await fastify.register(async (protectedFastify) => {
-    await protectedFastify.addHook('preHandler', authMiddleware(authService));
-    
-    // Rutas protegidas
-    await registerCatalogosModule(protectedFastify, catalogosController);
-    await registerETLModule(protectedFastify, etlController);
-    await registerAnalyticsModule(protectedFastify, analyticsController);
-  });
+  // Rutas de módulos públicos
+  await registerCatalogosModule(fastify, catalogosController);
+  await registerETLModule(fastify, etlController);
+  await registerAnalyticsModule(fastify, analyticsController);
+  await registerMedicionesModule(fastify, medicionesController);
+  await registerVistasModule(fastify, vistasController);
+  await registerInfraModule(fastify, infraController);
+  await registerAdminModule(fastify, adminController);
 
   // Ruta de health check
   await fastify.get('/health', {
@@ -155,7 +155,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
     },
   });
 
-  // Ruta para información del sistema
+  // Ruta para información del sistema (temporalmente comentada)
+  /*
   await fastify.get('/system/info', {
     schema: {
       summary: 'Información del sistema',
@@ -232,4 +233,5 @@ export async function registerRoutes(fastify: FastifyInstance) {
       });
     },
   });
+  */
 }

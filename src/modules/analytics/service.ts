@@ -15,6 +15,44 @@ import type {
   AlertaPerdida,
 } from './schemas.js';
 
+// Tipos para jerarquía de distribución
+export interface ClienteHierarchy {
+  id: number;
+  nroSuministro: string;
+  nombre: string;
+  direccion: string | null;
+  idSegmento: number;
+  segmentoNombre: string;
+  idLinea: number | null;
+  lineaNombre: string | null;
+  activo: boolean;
+  latitud: string | null;
+  longitud: string | null;
+  cod_postal: number | null;
+}
+
+export interface DistribuidorHierarchy {
+  id: number;
+  nombre: string | null;
+  ubicacion: string | null;
+  latitud: string | null;
+  longitud: string | null;
+  totalClientes: number;
+  clientes: ClienteHierarchy[];
+}
+
+export interface BocaHierarchy {
+  id: number;
+  nombre: string;
+  proveedor: string;
+  activo: boolean;
+  latitud: string | null;
+  longitud: string | null;
+  totalDistribuidores: number;
+  totalClientes: number;
+  distribuidores: DistribuidorHierarchy[];
+}
+
 // Utilidades de período simplificadas para evitar errores de TypeScript
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -476,5 +514,115 @@ export class AnalyticsService {
     }
 
     return alertas;
+  }
+
+  /**
+   * Obtiene la jerarquía completa de distribución por boca de compra
+   * Boca → Distribuidores → Clientes
+   */
+  async getBocaHierarchy(idBoca: number): Promise<BocaHierarchy> {
+    // Obtener la boca de compra
+    const boca = await this.prisma.catBocasCompra.findUnique({
+      where: { id: idBoca },
+      include: {
+        cat_distribuidor: {
+          include: {
+            usuarios: {
+              where: { activo: true },
+              include: {
+                segmento: true,
+                linea: true,
+              },
+              orderBy: { nombre: 'asc' },
+            },
+          },
+          orderBy: { nombre: 'asc' },
+        },
+      },
+    });
+
+    if (!boca) {
+      throw new Error(`Boca de compra con ID ${idBoca} no encontrada`);
+    }
+
+    // Transformar distribuidores
+    const distribuidores: DistribuidorHierarchy[] = boca.cat_distribuidor.map(dist => {
+      const clientes: ClienteHierarchy[] = dist.usuarios.map(usuario => ({
+        id: usuario.id,
+        nroSuministro: usuario.nroSuministro,
+        nombre: usuario.nombre,
+        direccion: usuario.direccion,
+        idSegmento: usuario.idSegmento,
+        segmentoNombre: usuario.segmento.nombre,
+        idLinea: usuario.idLinea,
+        lineaNombre: usuario.linea?.nombre || null,
+        activo: usuario.activo,
+        latitud: usuario.latitud?.toString() || null,
+        longitud: usuario.longitud?.toString() || null,
+        cod_postal: usuario.cod_postal,
+      }));
+
+      return {
+        id: dist.id,
+        nombre: dist.nombre,
+        ubicacion: dist.ubicacion,
+        latitud: dist.latitud?.toString() || null,
+        longitud: dist.longitud?.toString() || null,
+        totalClientes: clientes.length,
+        clientes,
+      };
+    });
+
+    // Calcular totales
+    const totalClientes = distribuidores.reduce((sum, dist) => sum + dist.totalClientes, 0);
+
+    return {
+      id: boca.id,
+      nombre: boca.nombre,
+      proveedor: boca.proveedor,
+      activo: boca.activo,
+      latitud: boca.latitud?.toString() || null,
+      longitud: boca.longitud?.toString() || null,
+      totalDistribuidores: distribuidores.length,
+      totalClientes,
+      distribuidores,
+    };
+  }
+
+  /**
+   * Obtiene todas las bocas con un resumen de su jerarquía (sin detalles de clientes)
+   */
+  async getAllBocasHierarchySummary(): Promise<Array<{
+    id: number;
+    nombre: string;
+    proveedor: string;
+    activo: boolean;
+    totalDistribuidores: number;
+    totalClientes: number;
+  }>> {
+    const bocas = await this.prisma.catBocasCompra.findMany({
+      include: {
+        cat_distribuidor: {
+          include: {
+            usuarios: {
+              where: { activo: true },
+            },
+          },
+        },
+      },
+      orderBy: { nombre: 'asc' },
+    });
+
+    return bocas.map(boca => ({
+      id: boca.id,
+      nombre: boca.nombre,
+      proveedor: boca.proveedor,
+      activo: boca.activo,
+      totalDistribuidores: boca.cat_distribuidor.length,
+      totalClientes: boca.cat_distribuidor.reduce(
+        (sum, dist) => sum + dist.usuarios.length,
+        0
+      ),
+    }));
   }
 }

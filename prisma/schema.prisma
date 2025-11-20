@@ -14,6 +14,9 @@ model CatBocasCompra {
   activo           Boolean            @default(true)
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
+  latitud          Decimal?           @db.Decimal
+  longitud         Decimal?           @db.Decimal
+  cat_distribuidor cat_distribuidor[]
   medicionesCompra MedicionesCompra[]
   balances         VwBalanceBocaMes[]
 
@@ -58,18 +61,23 @@ model CatTiposPoste {
 }
 
 model Usuarios {
-  id              Int               @id @default(autoincrement()) @map("id_usuario")
-  nroSuministro   String            @unique @map("nro_suministro") @db.VarChar(20)
-  nombre          String            @db.VarChar(200)
-  direccion       String?           @db.VarChar(300)
-  idSegmento      Int               @map("id_segmento")
-  idLinea         Int?              @map("id_linea")
-  activo          Boolean           @default(true)
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  medicionesVenta MedicionesVenta[]
-  linea           CatLineas?        @relation(fields: [idLinea], references: [id])
-  segmento        CatSegmentos      @relation(fields: [idSegmento], references: [id])
+  id               Int               @id @default(autoincrement()) @map("id_usuario")
+  nroSuministro    String            @unique @map("nro_suministro") @db.VarChar(20)
+  nombre           String            @db.VarChar(200)
+  direccion        String?           @db.VarChar(300)
+  idSegmento       Int               @map("id_segmento")
+  idLinea          Int?              @map("id_linea")
+  activo           Boolean           @default(true)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  cod_postal       Int?
+  latitud          Decimal?          @db.Decimal
+  longitud         Decimal?          @db.Decimal
+  distribuidor_id  Int?
+  medicionesVenta  MedicionesVenta[]
+  cat_distribuidor cat_distribuidor? @relation(fields: [distribuidor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "distribuidor_fk")
+  linea            CatLineas?        @relation(fields: [idLinea], references: [id])
+  segmento         CatSegmentos      @relation(fields: [idSegmento], references: [id])
 
   @@index([nroSuministro])
   @@index([idSegmento])
@@ -108,6 +116,7 @@ model MedicionesVenta {
   observaciones   String?
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
+  nro_suministro  Int?
   usuario         Usuarios  @relation(fields: [idUsuario], references: [id])
 
   @@unique([idUsuario, periodoBimestre])
@@ -177,37 +186,6 @@ model EtlMatchFacturas {
   @@index([entidadDestino])
   @@index([procesado])
   @@map("etl_match_facturas")
-}
-
-model UsersAuth {
-  id            Int             @id @default(autoincrement())
-  email         String          @unique @db.VarChar(150)
-  passwordHash  String          @map("password_hash")
-  role          String          @db.VarChar(20)
-  name          String?         @db.VarChar(200)
-  activo        Boolean         @default(true)
-  lastLogin     DateTime?       @map("last_login")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-  refreshTokens RefreshTokens[]
-
-  @@index([email])
-  @@map("users_auth")
-}
-
-model RefreshTokens {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @map("user_id")
-  tokenHash String    @map("token_hash") @db.VarChar(255)
-  expiresAt DateTime  @map("expires_at")
-  revoked   Boolean   @default(false)
-  createdAt DateTime  @default(now()) @map("created_at")
-  user      UsersAuth @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([tokenHash])
-  @@index([userId])
-  @@index([expiresAt])
-  @@map("refresh_tokens")
 }
 
 model ApiKeys {
@@ -284,4 +262,15 @@ model VwVentaPorLineaMes {
   @@unique([idLinea, periodoMes])
   @@index([periodoMes])
   @@map("vw_venta_por_linea_mes")
+}
+
+model cat_distribuidor {
+  id               Int             @id @default(autoincrement())
+  nombre           String?
+  ubicacion        String?
+  latitud          Decimal?        @db.Decimal
+  longitud         Decimal?        @db.Decimal
+  boca_compra_id   Int?
+  cat_bocas_compra CatBocasCompra? @relation(fields: [boca_compra_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "boca_compra_fk")
+  usuarios         Usuarios[]
 }

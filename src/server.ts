@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+
+// Cargar variables de entorno antes que cualquier otra cosa
+dotenv.config();
+
 import { createApp } from './app.js';
 import { connectDB, disconnectDB } from './infra/db.js';
 import config from './config/index.js';
@@ -9,9 +14,12 @@ async function startServer(): Promise<void> {
     await connectDB();
 
     // Crear aplicación Fastify
+    console.log('Creating app...');
     const app = await createApp();
+    console.log('App created successfully');
 
     // Iniciar servidor
+    console.log(`Starting server on ${config.host}:${config.port}...`);
     await app.listen({ 
       port: config.port, 
       host: config.host 
@@ -44,6 +52,8 @@ async function startServer(): Promise<void> {
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
   } catch (error) {
+    console.error('❌ Error iniciando servidor:');
+    console.error(error);
     logger.error('❌ Error iniciando servidor:', error);
     process.exit(1);
   }

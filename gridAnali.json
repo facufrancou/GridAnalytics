@@ -1,0 +1,64 @@
+{
+  "name": "ENERSA - Ingesta mínima (Webhook + SHA256)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "enersa/facturas",
+        "responseMode": "lastNode",
+        "options": {
+          "binaryData": true,
+          "responseCode": 200
+        }
+      },
+      "id": "Webhook_In",
+      "name": "Webhook (PDFs ENERSA)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [280, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Fan-out: crear un item por cada archivo del request\nconst bin = $binary || {};\nconst out = [];\nlet i = 0;\nfor (const key of Object.keys(bin)) {\n  const b = bin[key];\n  if (!b || !b.data) continue;\n  const filename = (b.fileName || key || `file_${i}.pdf`).trim();\n  out.push({ json: { input_filename: filename }, binary: { data: b } });\n  i++;\n}\nif (out.length === 0) {\n  return [{ json: { error: \"No se recibieron archivos en 'files[]'\" } }];\n}\nreturn out;"
+      },
+      "id": "FanOut_Files",
+      "name": "Separar archivos",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [520, 0]
+    },
+    {
+      "parameters": {
+        "operation": "hash",
+        "type": "sha256",
+        "value": "={{$binary.data}}",
+        "encoding": "binary"
+      },
+      "id": "Crypto_Hash",
+      "name": "SHA256 del archivo",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [760, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: {\n  status: 'ok',\n  archivos: items.map(it => ({\n    archivo: it.json.input_filename,\n    sha256: it.json.hash\n  }))\n}}];"
+      },
+      "id": "Build_Response",
+      "name": "Armar respuesta",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1000, 0]
+    }
+  ],
+  "connections": {
+    "Webhook (PDFs ENERSA)": { "main": [[{ "node": "Separar archivos", "type": "main", "index": 0 }]] },
+    "Separar archivos":     { "main": [[{ "node": "SHA256 del archivo", "type": "main", "index": 0 }]] },
+    "SHA256 del archivo":   { "main": [[{ "node": "Armar respuesta", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": {},
+  "staticData": {},
+  "meta": { "templateCredsSetup": false },
+  "active": false,
+  "version": 1
+}

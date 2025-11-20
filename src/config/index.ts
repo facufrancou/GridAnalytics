@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import type { FastifyInstance } from 'fastify';
+
+// Cargar variables de entorno
+dotenv.config();
 
 export interface Config {
   port: number;
@@ -33,8 +37,8 @@ export const config: Config = {
   },
   jwt: {
     secret: process.env.JWT_SECRET ?? '',
-    refreshSecret: process.env.REFRESH_TOKEN_SECRET ?? '',
-    accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '15m',
+    refreshSecret: process.env.JWT_REFRESH_SECRET ?? '',
+    accessExpiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
   },
   security: {

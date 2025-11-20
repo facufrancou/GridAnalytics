@@ -10,16 +10,19 @@ import {
 import { ValidationError } from '../../middlewares/error.js';
 import { generateContentHash, parseCSV } from '../../utils/csv.js';
 
-const etlService = new EtlService();
-
 export class EtlController {
+  private etlService: EtlService;
+
+  constructor() {
+    this.etlService = new EtlService();
+  }
 
   // ============ ETL COMPRA (PDF procesado por n8n) ============
   
   async processCompraFromPdf(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const data = etlCompraSchema.parse(request.body);
-      const result = await etlService.processCompraFromPdf(data);
+      const result = await this.etlService.processCompraFromPdf(data);
       
       await reply.status(result.success ? 200 : 400).send(result);
     } catch (error) {
@@ -65,7 +68,7 @@ export class EtlController {
       }
 
       const validatedData = etlVentaCsvSchema.parse(csvData);
-      const result = await etlService.processVentaFromCsv(validatedData);
+      const result = await this.etlService.processVentaFromCsv(validatedData);
       
       await reply.status(result.success ? 200 : 400).send(result);
     } catch (error) {
@@ -107,7 +110,7 @@ export class EtlController {
       }
 
       const validatedData = etlUsuariosCsvSchema.parse(csvData);
-      const result = await etlService.processUsuariosFromCsv(validatedData);
+      const result = await this.etlService.processUsuariosFromCsv(validatedData);
       
       await reply.status(result.success ? 200 : 400).send(result);
     } catch (error) {
@@ -156,7 +159,7 @@ export class EtlController {
       }
 
       const validatedData = etlLineasPostesCsvSchema.parse(csvData);
-      const result = await etlService.processLineasPostesFromCsv(validatedData);
+      const result = await this.etlService.processLineasPostesFromCsv(validatedData);
       
       await reply.status(result.success ? 200 : 400).send(result);
     } catch (error) {
@@ -172,7 +175,7 @@ export class EtlController {
   async getEtlLogs(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     try {
       const query = etlLogsQuerySchema.parse(request.query);
-      const result = await etlService.getEtlLogs(query);
+      const result = await this.etlService.getEtlLogs(query);
       
       await reply.status(200).send({
         success: true,
@@ -188,7 +191,7 @@ export class EtlController {
   }
 
   async getEtlStats(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const result = await etlService.getEtlStats();
+    const result = await this.etlService.getEtlStats();
     
     await reply.status(200).send({
       success: true,
@@ -241,7 +244,7 @@ export class EtlController {
   async getProcessingStatus(request: FastifyRequest, reply: FastifyReply): Promise<void> {
     const { hashDoc } = request.params as { hashDoc: string };
     
-    const existingRecord = await etlService.getEtlLogs({
+    const existingRecord = await this.etlService.getEtlLogs({
       limit: 1,
       offset: 0,
     });

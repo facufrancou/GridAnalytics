@@ -1,6 +1,5 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import { EtlController } from './controller.js';
-import { authMiddleware, requirePermissions } from '../../middlewares/auth.js';
 
 const etlController = new EtlController();
 
@@ -9,21 +8,14 @@ export default async function etlRoutes(
   options: FastifyPluginOptions
 ): Promise<void> {
 
-  // Aplicar autenticación a todas las rutas ETL
-  fastify.addHook('preHandler', authMiddleware);
-
   // ============ ETL COMPRA (PDF procesado por n8n) ============
   
   fastify.post('/compra/pdf', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:compra'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Procesar compra desde PDF (n8n)',
       description: 'Procesar datos de compra extraídos de PDF por n8n',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       body: {
         type: 'object',
         required: ['idBoca', 'periodoMes', 'kwhComprados', 'importe', 'archivo', 'hashDoc'],
@@ -60,15 +52,11 @@ export default async function etlRoutes(
   // ============ ETL VENTA (CSV) ============
   
   fastify.post('/venta/csv', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:venta'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Procesar ventas desde CSV',
       description: 'Procesar datos de venta desde archivo CSV o datos JSON',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       consumes: ['multipart/form-data', 'application/json'],
       body: {
         anyOf: [
@@ -124,15 +112,11 @@ export default async function etlRoutes(
   // ============ ETL USUARIOS (CSV) ============
   
   fastify.post('/usuarios/csv', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:usuarios'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Procesar usuarios desde CSV',
       description: 'Alta/actualización masiva de usuarios desde CSV',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       consumes: ['multipart/form-data', 'application/json'],
       body: {
         anyOf: [
@@ -153,7 +137,7 @@ export default async function etlRoutes(
                     direccion: { type: 'string', maxLength: 300 },
                     segmentoCodigo: { type: 'string', minLength: 2, maxLength: 10 },
                     lineaNombre: { type: 'string', minLength: 3, maxLength: 100 },
-                    activo: { type: 'boolean', default: true },
+                    activo: { type: 'boolean' },
                   },
                 },
               },
@@ -171,15 +155,11 @@ export default async function etlRoutes(
   // ============ ETL LÍNEAS Y POSTES (CSV) ============
   
   fastify.post('/lineas-postes/csv', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:lineas'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Procesar líneas y postes desde CSV',
       description: 'Alta/actualización de líneas eléctricas y relevamiento de postes',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       consumes: ['multipart/form-data', 'application/json'],
       body: {
         anyOf: [
@@ -198,7 +178,7 @@ export default async function etlRoutes(
                     nombre: { type: 'string', minLength: 3, maxLength: 100 },
                     tension: { type: 'string', minLength: 2, maxLength: 20 },
                     zona: { type: 'string', minLength: 2, maxLength: 50 },
-                    activo: { type: 'boolean', default: true },
+                    activo: { type: 'boolean' },
                   },
                 },
               },
@@ -232,15 +212,11 @@ export default async function etlRoutes(
   // ============ CONSULTAS Y LOGS ETL ============
   
   fastify.get('/logs', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador', 'bi'], 
-      scopes: ['catalogos:read'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Obtener logs de ETL',
       description: 'Consultar historial de procesamiento ETL',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       querystring: {
         type: 'object',
         properties: {
@@ -305,15 +281,11 @@ export default async function etlRoutes(
   }, etlController.getEtlLogs.bind(etlController));
 
   fastify.get('/stats', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador', 'bi'], 
-      scopes: ['catalogos:read'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Obtener estadísticas de ETL',
       description: 'Estadísticas generales de procesamiento ETL',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       response: {
         200: {
           type: 'object',
@@ -343,15 +315,11 @@ export default async function etlRoutes(
   // ============ UTILIDADES ============
   
   fastify.post('/validate-csv', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:compra', 'etl:venta', 'etl:usuarios'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Validar formato CSV',
       description: 'Validar estructura y formato de archivo CSV antes del procesamiento',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       consumes: ['multipart/form-data'],
       response: {
         200: {
@@ -375,15 +343,11 @@ export default async function etlRoutes(
   }, etlController.validateCsv.bind(etlController));
 
   fastify.get('/status/:hashDoc', {
-    preHandler: [requirePermissions({ 
-      roles: ['admin', 'operador'], 
-      scopes: ['etl:compra', 'etl:venta', 'etl:usuarios'] 
-    })],
     schema: {
       tags: ['ETL'],
       summary: 'Verificar estado de procesamiento',
       description: 'Verificar si un documento ya fue procesado (para n8n)',
-      security: [{ bearerAuth: [] }, { apiKey: [] }],
+      
       params: {
         type: 'object',
         required: ['hashDoc'],

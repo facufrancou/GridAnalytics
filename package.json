@@ -17,6 +17,8 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:complete": "tsx prisma/seed-complete.ts",
+    "db:verify": "tsx prisma/verify-data.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
     "postinstall": "prisma generate"
@@ -56,11 +58,13 @@
     "csv-parse": "^5.5.2",
     "csv-stringify": "^6.4.4",
     "dayjs": "^1.11.10",
+    "dotenv": "^17.2.3",
     "fastify": "^4.24.3",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.0.4",
     "pino": "^8.16.2",
     "pino-pretty": "^10.2.3",
+    "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },
   "devDependencies": {

@@ -5,17 +5,12 @@ import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import multipart from '@fastify/multipart';
+import { nanoid } from 'nanoid';
 
 import config from './config/index.js';
 import { logger } from './utils/logger.js';
 import { errorHandler } from './middlewares/error.js';
-import { requestIdMiddleware } from './middlewares/requestId.js';
-
-// Importar rutas (las crearemos a continuación)
-// import authRoutes from './modules/auth/routes.js';
-// import catalogosRoutes from './modules/catalogos/routes.js';
-// import etlRoutes from './modules/etl/routes.js';
-// import analiticaRoutes from './modules/analitica/routes.js';
+import { registerRoutes } from './routes.js';
 
 export async function createApp() {
   // Crear instancia de Fastify
@@ -97,8 +92,11 @@ export async function createApp() {
     transformStaticCSP: (header) => header,
   });
 
-  // Middleware de requestId
-  await fastify.addHook('preHandler', requestIdMiddleware);
+  // Middleware de requestId - registrar como hook
+  fastify.addHook('onRequest', async (request, reply) => {
+    const requestId = nanoid(10);
+    request.requestId = requestId;
+  });
 
   // Error handler global
   fastify.setErrorHandler(errorHandler);
@@ -125,11 +123,10 @@ export async function createApp() {
     };
   });
 
-  // TODO: Registrar rutas de módulos
-  // await fastify.register(authRoutes, { prefix: '/auth' });
-  // await fastify.register(catalogosRoutes, { prefix: '/catalogos' });
-  // await fastify.register(etlRoutes, { prefix: '/etl' });
-  // await fastify.register(analiticaRoutes, { prefix: '/analitica' });
+  // Registrar rutas de módulos
+  await fastify.register(async (apiInstance) => {
+    await registerRoutes(apiInstance);
+  }, { prefix: '/api' });
 
   return fastify;
 }

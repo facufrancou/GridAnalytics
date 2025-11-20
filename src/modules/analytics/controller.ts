@@ -16,6 +16,8 @@ interface IAnalyticsController {
   getResumenPeriodo: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   getTopPerdidas: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   generarAlertas: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  getBocaHierarchy: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  getAllBocasHierarchySummary: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 }
 
 export class AnalyticsController implements IAnalyticsController {
@@ -288,6 +290,56 @@ export class AnalyticsController implements IAnalyticsController {
       await reply.code(400).send({
         success: false,
         error: error.message || 'Error generando alertas',
+      });
+    }
+  }
+
+  // GET /analytics/jerarquia/boca/:idBoca
+  async getBocaHierarchy(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    try {
+      const params = request.params as { idBoca: string };
+      const idBoca = parseInt(params.idBoca, 10);
+
+      if (isNaN(idBoca)) {
+        await reply.code(400).send({
+          success: false,
+          error: 'ID de boca inválido',
+        });
+        return;
+      }
+
+      const hierarchy = await this.analyticsService.getBocaHierarchy(idBoca);
+
+      await reply.code(200).send({
+        success: true,
+        data: hierarchy,
+      });
+    } catch (error: any) {
+      await reply.code(400).send({
+        success: false,
+        error: error.message || 'Error obteniendo jerarquía de boca',
+      });
+    }
+  }
+
+  // GET /analytics/jerarquia/bocas
+  async getAllBocasHierarchySummary(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    try {
+      const summary = await this.analyticsService.getAllBocasHierarchySummary();
+
+      await reply.code(200).send({
+        success: true,
+        data: summary,
+        meta: {
+          total: summary.length,
+          totalDistribuidores: summary.reduce((sum, b) => sum + b.totalDistribuidores, 0),
+          totalClientes: summary.reduce((sum, b) => sum + b.totalClientes, 0),
+        },
+      });
+    } catch (error: any) {
+      await reply.code(400).send({
+        success: false,
+        error: error.message || 'Error obteniendo resumen de bocas',
       });
     }
   }

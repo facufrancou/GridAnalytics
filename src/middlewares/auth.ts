@@ -1,10 +1,15 @@
 import jwt from 'jsonwebtoken';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import config from '../../config/index.js';
-import { UnauthorizedError, ForbiddenError } from '../../middlewares/error.js';
-import { AuthService } from './service.js';
-import { logSecurityEvent } from '../../utils/logger.js';
-import type { JWTPayload } from './service.js';
+import config from '../config/index.js';
+import { UnauthorizedError, ForbiddenError } from './error.js';
+import { AuthService } from '../modules/auth/service.js';
+import { logger } from '../utils/logger.js';
+import type { JWTPayload } from '../modules/auth/service.js';
+
+// Helper for security logging
+function logSecurityEvent(event: string, details: any) {
+  logger.warn({ event, ...details }, 'Security Event');
+}
 
 const authService = new AuthService();
 
