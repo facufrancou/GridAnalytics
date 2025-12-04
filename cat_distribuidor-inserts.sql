@@ -1,6 +1,3 @@
--- Eliminar datos existentes en cat_distribuidor
-TRUNCATE TABLE cat_distribuidor RESTART IDENTITY CASCADE;
-
 INSERT INTO cat_distribuidor (nombre, ubicacion, latitud, longitud, boca_compra_id) VALUES ('DIST1', 'SEGUI RURAL', -31.96697055, -60.134593491, 1),
 ('DIST2', 'SEGUI RURAL', -31.966943291, -60.134582777, 1),
 ('DIST3', 'SEGUI RURAL', -31.966907536, -60.134553702, 1),
@@ -12,4 +9,4 @@ INSERT INTO cat_distribuidor (nombre, ubicacion, latitud, longitud, boca_compra_
 ('DIST9', 'SEGUI PARQUE INDUSTRIAL', -31.967005048, 60.134619167, 1),
 ('DIST10', 'VIALE PARQUE INDUSTRIAL', -31.897496787, -60.016101396, 4),
 ('DIST11', 'SEGUI PARQUE INDUSTRIAL 33 kV', NULL, NULL, 1),
-('DIST12', 'SEGUI PARQUE INDUSTRIAL 33 kV', NULL, NULL, 4);
+('DIST12', 'SEGUI PARQUE INDUSTRIAL 33 kV', NULL, NULL, 4) ON CONFLICT (id) DO NOTHING;

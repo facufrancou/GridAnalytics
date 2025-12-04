@@ -25,7 +25,7 @@ model CatBocasCompra {
 
 model CatSegmentos {
   id        Int        @id @default(autoincrement()) @map("id_segmento")
-  nombre    String     @unique @db.VarChar(50)
+  nombre    String     @db.VarChar(50)
   codigo    String     @unique @db.VarChar(10)
   activo    Boolean    @default(true)
   createdAt DateTime   @default(now()) @map("created_at")

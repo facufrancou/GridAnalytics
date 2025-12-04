@@ -92,28 +92,42 @@ const segSheet = segWorkbook.Sheets[segSheetName];
 if (!segSheet) throw new Error('No se pudo leer la hoja de cat_segmentos.xlsx');
 const segData = XLSX.utils.sheet_to_json<any>(segSheet);
 
+// Filtrar duplicados por codigo (el codigo debe ser único, mantener el primero)
+const seenCodigos = new Set<string>();
+const segDataUnique = segData.filter((row: any) => {
+  const codigo = String(row['codigo'] || '').trim();
+  if (seenCodigos.has(codigo)) {
+    console.log(`  ⚠ Código duplicado omitido: id_segmento=${row['id_segmento']}, codigo="${codigo}"`);
+    return false;
+  }
+  seenCodigos.add(codigo);
+  return true;
+});
+
 const segInserts: string[] = [];
 const segBatchSize = 50;
 
-for (let i = 0; i < segData.length; i += segBatchSize) {
-  const batch = segData.slice(i, i + segBatchSize);
+for (let i = 0; i < segDataUnique.length; i += segBatchSize) {
+  const batch = segDataUnique.slice(i, i + segBatchSize);
   const values: string[] = [];
   
   for (const row of batch) {
+    const idSegmento = Number(row['id_segmento']);
+    if (isNaN(idSegmento)) continue; // Saltar filas sin id_segmento válido
     const nombre = escapeString(row['nombre']);
     const codigo = escapeString(row['codigo']);
     const activo = row['activo'] !== undefined ? (row['activo'] ? 'true' : 'false') : 'true';
-    const createdAt = row['created_at'] && row['created_at'] !== 'null' ? `'${row['created_at']}'` : 'CURRENT_TIMESTAMP';
-    const updatedAt = row['updated_at'] && row['updated_at'] !== 'null' ? `'${row['updated_at']}'` : 'CURRENT_TIMESTAMP';
 
-    values.push(`('${nombre}', '${codigo}', ${activo}, ${createdAt}, ${updatedAt})`);
+    values.push(`(${idSegmento}, '${nombre}', '${codigo}', ${activo}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`);
   }
   
-  const sql = `INSERT INTO cat_segmentos (nombre, codigo, activo, created_at, updated_at) VALUES ${values.join(',\n')} ON CONFLICT (id_segmento) DO NOTHING;`;
+  if (values.length === 0) continue;
+  const sql = `INSERT INTO cat_segmentos (id_segmento, nombre, codigo, activo, created_at, updated_at) VALUES ${values.join(',\n')} ON CONFLICT (id_segmento) DO UPDATE SET nombre = EXCLUDED.nombre, codigo = EXCLUDED.codigo, activo = EXCLUDED.activo, updated_at = CURRENT_TIMESTAMP;`;
   segInserts.push(sql);
 }
 
-fs.writeFileSync('cat_segmentos-inserts.sql', segInserts.join('\n\n'));
-console.log(`✓ cat_segmentos-inserts.sql generado (${segData.length} registros en ${segInserts.length} comandos)`);
+const segHeader = `-- Eliminar datos existentes en cat_segmentos\nTRUNCATE TABLE cat_segmentos RESTART IDENTITY CASCADE;\n\n`;
+fs.writeFileSync('cat_segmentos-inserts.sql', segHeader + segInserts.join('\n\n'));
+console.log(`✓ cat_segmentos-inserts.sql generado (${segDataUnique.length} registros, ${segData.length - segDataUnique.length} duplicados omitidos)`);
 
 console.log('\n✓ Todos los archivos SQL generados exitosamente.');

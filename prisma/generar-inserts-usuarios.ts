@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 
-// Leer el archivo Excel
+// Leer el archivo Excel de usuarios
 const workbook = XLSX.readFile('usuarios.xlsx');
 if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
   throw new Error('El archivo usuarios.xlsx no contiene hojas.');
@@ -12,6 +12,22 @@ if (!worksheet) {
   throw new Error(`No se encontró la hoja '${sheetName}' en usuarios.xlsx.`);
 }
 const data = XLSX.utils.sheet_to_json<any>(worksheet);
+
+// Leer el archivo padron-tarifas.xlsx para obtener el id_segmento
+const padronWorkbook = XLSX.readFile('padron-tarifas.xlsx');
+const padronSheet = padronWorkbook.Sheets[padronWorkbook.SheetNames[0]!]!;
+const padronData = XLSX.utils.sheet_to_json<any>(padronSheet);
+
+// Crear mapa de Codigo -> id_segmento desde padron-tarifas
+const segmentosPorCodigo = new Map<string, number>();
+for (const row of padronData) {
+  const codigo = String(row['Codigo']);
+  const idSegmento = Number(row['id_segmento']);
+  if (codigo && !isNaN(idSegmento)) {
+    segmentosPorCodigo.set(codigo, idSegmento);
+  }
+}
+console.log(`Padrón de tarifas cargado: ${segmentosPorCodigo.size} registros`);
 
 // Filtrar duplicados por nro_suministro (quedarse con el primero)
 const seen = new Set<string>();
@@ -46,7 +62,8 @@ for (let i = 0; i < uniqueData.length; i += batchSize) {
     const nroSuministro = String(row['nro_suministro']).replace(/'/g, "''");
     const nombre = (row['nombre'] || '').replace(/'/g, "''");
     const direccion = row['direccion'] ? `'${String(row['direccion']).replace(/'/g, "''")}'` : 'NULL';
-    const idSegmento = Number(row['id_segmento']) || 1;
+    // Buscar id_segmento en padron-tarifas por nro_suministro, si no existe usar 1 por defecto
+    const idSegmento = segmentosPorCodigo.get(nroSuministro) || 1;
     const idLineaNum = Number(row['id_linea']);
     const idLinea = (row['id_linea'] && !isNaN(idLineaNum)) ? idLineaNum : 'NULL';
     const activo = 'true';
