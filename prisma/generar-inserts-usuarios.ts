@@ -73,7 +73,8 @@ for (let i = 0; i < uniqueData.length; i += batchSize) {
     const codPostal = (row['cod_postal'] && !isNaN(codPostalNum)) ? codPostalNum : 'NULL';
     const latitud = parseDecimal(row['latitud']);
     const longitud = parseDecimal(row['longitud']);
-    const distribuidorId = 1;
+    const distribuidorIdNum = Number(row['distribuidor_id']);
+    const distribuidorId = (row['distribuidor_id'] && !isNaN(distribuidorIdNum)) ? distribuidorIdNum : 'NULL';
 
     values.push(`('${nroSuministro}', '${nombre}', ${direccion}, ${idSegmento}, ${idLinea}, ${activo}, ${createdAt}, ${updatedAt}, ${codPostal}, ${latitud}, ${longitud}, ${distribuidorId})`);
   }
